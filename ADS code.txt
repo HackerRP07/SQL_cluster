@@ -1,0 +1,203 @@
+CREATE DATABASE warehouse;
+USE warehouse;
+
+
+-- Dimension Tables
+
+-- Create Cities table
+CREATE TABLE Cities (
+  City_id INT PRIMARY KEY,
+  City_name VARCHAR(50) NOT NULL,
+  State VARCHAR(50) NOT NULL
+);
+
+-- Create Items table
+CREATE TABLE Items (
+  Item_id INT PRIMARY KEY,
+  Description VARCHAR(50) NOT NULL,
+  Size VARCHAR(20),
+  Weight FLOAT,
+  Unit_price FLOAT
+);
+-- Create Customers table
+CREATE TABLE Customers (
+  Customer_id INT PRIMARY KEY,
+  Customer_name VARCHAR(50) NOT NULL,
+  City_id INT,
+  First_order_date DATE,
+  FOREIGN KEY (City_id) REFERENCES Cities(City_id)
+);
+
+
+
+-- Create Stores table
+CREATE TABLE Stores (
+  Store_id INT PRIMARY KEY,
+  City_id INT,
+  Phone VARCHAR(20) NOT NULL,
+  FOREIGN KEY (City_id) REFERENCES Cities(City_id)
+);
+
+
+
+
+-- Fact Tables
+
+-- Create Sales table
+CREATE TABLE Sales (
+  Order_no INT PRIMARY KEY,
+  Order_date DATE NOT NULL,
+  Customer_id INT,
+  Item_id INT,
+  Quantity_ordered INT,
+  Ordered_price FLOAT,
+  Time TIMESTAMP NOT NULL,
+  FOREIGN KEY (Customer_id) REFERENCES Customers(Customer_id),
+  FOREIGN KEY (Item_id) REFERENCES Items(Item_id)
+);
+
+-- Create Inventory table
+CREATE TABLE Inventory (
+  Store_id INT,
+  Item_id INT,
+  Quantity_held INT,
+  Time TIMESTAMP NOT NULL,
+  PRIMARY KEY (Store_id, Item_id, Time),
+  FOREIGN KEY (Store_id) REFERENCES Stores(Store_id),
+  FOREIGN KEY (Item_id) REFERENCES Items(Item_id)
+);
+
+-- ===================================================
+
+-- 2
+INSERT INTO Cities (City_id, City_name, State) VALUES
+(1, 'New York City', 'New York'),
+(2, 'Los Angeles', 'California'),
+(3, 'Chicago', 'Illinois'),
+(4, 'Houston', 'Texas'),
+(5, 'Philadelphia', 'Pennsylvania');
+
+
+-- 4
+INSERT INTO Items (Item_id, Description, Size, Weight, Unit_price) VALUES
+(1, 'T-shirt', 'M', 0.2, 10.99),
+(2, 'Jeans', 'L', 0.6, 35.99),
+(3, 'Sneakers', '9', 0.9, 79.99),
+(4, 'Jacket', 'M', 1.2, 99.99),
+(5, 'Hoodie', 'S', 0.4, 29.99);
+
+-- 1
+INSERT INTO Customers (Customer_id, Customer_name, City_id, First_order_date) VALUES
+(1, 'John Doe', 1, '2022-01-01'),
+(2, 'Jane Smith', 2, '2022-02-05'),
+(3, 'David Brown', 3, '2022-03-10'),
+(4, 'Mary Johnson', 2, '2022-02-15'),
+(5, 'Mark Lee', 1, '2022-01-20');
+
+
+
+-- 3
+INSERT INTO Stores (Store_id, City_id, Phone) VALUES
+(1, 1, '212-555-1234'),
+(2, 2, '310-555-5678'),
+(3, 3, '312-555-4321'),
+(4, 2, '323-555-8765'),
+(5, 1, '917-555-5555');
+
+
+
+-- 5 
+INSERT INTO Sales (Order_no, Order_date, Customer_id, Item_id, Quantity_ordered, Ordered_price, Time) VALUES
+(1, '2022-01-01', 1, 1, 2, 21.98, '2022-04-01'),
+(2, '2022-02-05', 2, 2, 1, 35.99, '2022-04-01'),
+(3, '2022-03-10', 3, 3, 1, 79.99, '2022-04-01'),
+(4, '2022-02-15', 4, 4, 1, 99.99, '2022-04-01'),
+(5, '2022-01-20', 5, 5, 2, 59.98, '2022-04-01');
+
+
+-- 6
+INSERT INTO Inventory (Store_id, Item_id, Quantity_held, Time) VALUES
+(1, 1, 10, '2022-04-01'),
+(2, 2, 20, '2022-04-01'),
+(3, 3, 15, '2022-04-01'),
+(4, 4, 5, '2022-04-01'),
+(5, 5, 8, '2022-04-01');
+
+
+
+
+
+
+
+
+
+-- =================================================
+
+-- 1
+SELECT Stores.Store_id, Cities.City_name, Cities.State, Stores.Phone, Items.Description, Items.Size, Items.Weight, Items.Unit_price
+FROM Stores
+JOIN Cities ON Stores.City_id = Cities.City_id
+JOIN Inventory ON Stores.Store_id = Inventory.Store_id
+JOIN Items ON Inventory.Item_id = Items.Item_id
+WHERE Items.Description = 'Jeans';
+
+
+-- 2
+SELECT Customers.Customer_name, Sales.Order_date
+FROM Customers
+JOIN Sales ON Customers.Customer_id = Sales.Customer_id
+JOIN Inventory ON Sales.Item_id = Inventory.Item_id
+WHERE Inventory.Store_id = 1;
+
+
+-- 3
+SELECT Stores.Store_id, Cities.City_name, Stores.Phone
+FROM Stores
+JOIN Cities ON Stores.City_id = Cities.City_id
+JOIN Inventory ON Stores.Store_id = Inventory.Store_id
+JOIN Sales ON Inventory.Item_id = Sales.Item_id
+JOIN Customers ON Sales.Customer_id = Customers.Customer_id
+WHERE Customers.Customer_id = 2;
+
+-- 4
+SELECT DISTINCT Cities.City_name, Cities.State, Stores.Store_id
+FROM Cities
+JOIN Stores ON Cities.City_id = Stores.City_id
+JOIN Inventory ON Stores.Store_id = Inventory.Store_id
+WHERE Inventory.Item_id = 1 AND Inventory.Quantity_held >1;
+
+
+-- 5 
+SELECT Customers.Customer_id, Customers.Customer_name, Sales.Order_no, Items.Description, Stores.Store_id, Cities.City_name
+FROM Customers
+JOIN Sales ON Customers.Customer_id = Sales.Customer_id
+JOIN Items ON Sales.Item_id = Items.Item_id
+JOIN Inventory ON Items.Item_id = Inventory.Item_id
+JOIN Stores ON Inventory.Store_id = Stores.Store_id
+JOIN Cities ON Stores.City_id = Cities.City_id
+WHERE Sales.Order_no = 1;
+
+
+-- 6
+SELECT Cities.City_name, Cities.State
+FROM Customers
+JOIN Cities ON Customers.City_id = Cities.City_id
+WHERE Customers.Customer_id = 3;
+
+
+-- 7
+SELECT Stores.Store_id, Inventory.Quantity_held
+FROM Stores
+JOIN Cities ON Stores.City_id = Cities.City_id
+JOIN Inventory ON Stores.Store_id = Inventory.Store_id
+JOIN Items ON Inventory.Item_id = Items.Item_id
+WHERE Cities.City_name = 'Ney York City' AND Items.Item_id = 1;
+
+-- 8
+SELECT i.description , s.Quantity_ordered, c.Customer_name ,st.phone ,ct.City_name
+FROM Sales s
+JOIN  Items i ON s.Item_id = i.item_Id
+JOIN Customers c ON s.Customer_id = c.Customer_id
+JOIN Stores st ON s.Customer_id = st.Store_id
+JOIN Cities ct ON c.City_id = st.City_id
+WHERE  s.Order_no = 2;
